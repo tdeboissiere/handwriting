@@ -1,0 +1,12 @@
+*.pyc
+tests/**/*.pyc
+handwriting/**/*.pyc
+handwriting/__pycache__/*
+/__pycache__/**/*
+handwriting/training/dummy.py
+handwriting/training/train_backup.py
+*.FITS
+*.csv
+*.h5
+notebooks/**/.ipynb_checkpoints/*
+.cache
