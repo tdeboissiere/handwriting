@@ -1,5 +1,6 @@
 # handwriting repository
 
+![figure](/docs/walkthrough/sample_figure.png)
 
 ## Repository overview
 
