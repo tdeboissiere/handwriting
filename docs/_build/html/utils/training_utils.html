@@ -1,0 +1,567 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Training &mdash; handwriting  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="handwriting  documentation" href="../index.html"/>
+        <link rel="up" title="utils" href="index.html"/>
+        <link rel="next" title="Inference" href="inference_utils.html"/>
+        <link rel="prev" title="Logging" href="logging_utils.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> handwriting
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/system.html">System configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/python.html">Python configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Walkthrough</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../walkthrough/index.html">Walkthrough</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../training/index.html">training</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">utils</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="experiment_settings.html">Experiment Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging_utils.html">Logging</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_utils.html">Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization_utils.html">Visualization</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">handwriting</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">utils</a> &raquo;</li>
+        
+      <li>Training</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/utils/training_utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-handwriting.utils.training_utils">
+<span id="training"></span><h1>Training<a class="headerlink" href="#module-handwriting.utils.training_utils" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="handwriting.utils.training_utils.DataContainer">
+<em class="property">class </em><code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">DataContainer</code><span class="sig-paren">(</span><em>strokes</em>, <em>texts</em>, <em>onehots</em><span class="sig-paren">)</span><a class="headerlink" href="#handwriting.utils.training_utils.DataContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="handwriting.utils.training_utils.DataContainer.onehots">
+<code class="descname">onehots</code><a class="headerlink" href="#handwriting.utils.training_utils.DataContainer.onehots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="handwriting.utils.training_utils.DataContainer.strokes">
+<code class="descname">strokes</code><a class="headerlink" href="#handwriting.utils.training_utils.DataContainer.strokes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="handwriting.utils.training_utils.DataContainer.texts">
+<code class="descname">texts</code><a class="headerlink" href="#handwriting.utils.training_utils.DataContainer.texts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.classification_loss">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">classification_loss</code><span class="sig-paren">(</span><em>e_truth</em>, <em>e_logit</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#classification_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.classification_loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute binary cross entropy with logits between target and output logits</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>e_truth</strong> (<em>Variable</em>) – target eos</li>
+<li><strong>e_logit</strong> (<em>Variable</em>) – predicted logits</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the binary cross entropy loss</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#handwriting.utils.training_utils.classification_loss" title="handwriting.utils.training_utils.classification_loss">classification_loss</a> (Variable)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.compute_Z">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">compute_Z</code><span class="sig-paren">(</span><em>X1</em>, <em>X2</em>, <em>mu1</em>, <em>mu2</em>, <em>log_sigma1</em>, <em>log_sigma2</em>, <em>rho</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#compute_Z"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.compute_Z" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the z quantity of Formula 25 from <a class="reference external" href="https://arxiv.org/pdf/1308.0850.pdf">https://arxiv.org/pdf/1308.0850.pdf</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>X1</strong> (<em>Variable</em><em> or </em><em>Tensor</em>) – specify where to evaluate 2D gaussian</li>
+<li><strong>X2</strong> (<em>Variable</em><em> or </em><em>Tensor</em>) – specify where to evaluate 2D gaussian</li>
+<li><strong>mu1</strong> (<em>Variable</em><em> or </em><em>Tensor</em>) – mean the first gaussian component</li>
+<li><strong>mu2</strong> (<em>Variable</em><em> or </em><em>Tensor</em>) – mean the second gaussian component</li>
+<li><strong>log_sigma1</strong> (<em>Variable</em><em> or </em><em>Tensor</em>) – log standard deviation of the first gaussian component</li>
+<li><strong>log_sigma2</strong> (<em>Variable</em><em> or </em><em>Tensor</em>) – log standard deviation of the second gaussian component</li>
+<li><strong>rho</strong> (<em>Variable</em><em> or </em><em>Tensor</em>) – captures the correlation between the gaussian components</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the computed Z</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Z (Variable or Tensor)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.gaussian_2Dnll">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">gaussian_2Dnll</code><span class="sig-paren">(</span><em>X1</em>, <em>X2</em>, <em>mdnparams</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#gaussian_2Dnll"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.gaussian_2Dnll" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute 2D gaussian negative log-likelihood</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>X1</strong> (<em>Variable</em>) – the first component of the target stroke</li>
+<li><strong>X2</strong> (<em>Variable</em>) – the second component of the target stroke</li>
+<li><strong>mdnparams</strong> (<em>namedtuple</em>) – holds the predicted Mixture Gaussian parameters</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the computed 2D gaussian negative log-likelihood</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">nll (Variable)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.get_model">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">get_model</code><span class="sig-paren">(</span><em>settings</em>, <em>input_dim</em>, <em>output_dim</em>, <em>onehot_dim=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#get_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.get_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility for model loading</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class to hold hyperparams</li>
+<li><strong>input_dim</strong> (<em>int</em>) – the last dimension of a (seq_len, batch_size, input_dim) input</li>
+<li><strong>output_dim</strong> (<em>int</em>) – the last dimension of a (seq_len, batch_size, output_dim) output</li>
+<li><strong>onehot_dim</strong> (<em>int</em>) – text one hot encoding dimension (=vocabulary size)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a custom pytorch RNN model</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">rnn (nn.Model)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.get_optimizer">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">get_optimizer</code><span class="sig-paren">(</span><em>settings</em>, <em>model</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#get_optimizer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.get_optimizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility for gradient descent optimizer loading</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class to hold hyperparams</li>
+<li><strong>model</strong> (<em>nn.Model</em>) – the model to optimize</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a pytorch optimizer</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">optimizer (torch.optimizer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.get_random_conditional_training_batch">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">get_random_conditional_training_batch</code><span class="sig-paren">(</span><em>settings</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#get_random_conditional_training_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.get_random_conditional_training_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility to load a random batch for conditional training</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class to hold hyperparams</li>
+<li><strong>data</strong> (<a class="reference internal" href="#handwriting.utils.training_utils.DataContainer" title="handwriting.utils.training_utils.DataContainer"><em>DataContainer</em></a>) – custom class holding the data</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>feature and target tensor</dt>
+<dd><p class="first last">plus onehot tensor for conditional generation</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">X_tensor, Y_tensor (torch.Tensor)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.get_random_unconditional_training_batch">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">get_random_unconditional_training_batch</code><span class="sig-paren">(</span><em>settings</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#get_random_unconditional_training_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.get_random_unconditional_training_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility to load a random batch for unconditional training</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class to hold hyperparams</li>
+<li><strong>data</strong> (<a class="reference internal" href="#handwriting.utils.training_utils.DataContainer" title="handwriting.utils.training_utils.DataContainer"><em>DataContainer</em></a>) – custom class holding the data</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">input and target tensor</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">X_tensor, Y_tensor (torch.Tensor)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.load_data">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">load_data</code><span class="sig-paren">(</span><em>settings</em>, <em>data_path='data/raw'</em>, <em>validate=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Load data to train RNN for handwriting generation</dt>
+<dd>Shuffle the data and split between training and validation</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class to hold hyperparams</li>
+<li><strong>data_path</strong> (<em>str</em>) – path to data</li>
+<li><strong>validate</strong> (<em>bool</em>) – whether we are in validation mode. This is used</li>
+<li><strong>add the char to idx and idx to char mappings to settings.</strong> (<em>to</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">custom class holding the data</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">data_container (<a class="reference internal" href="#handwriting.utils.training_utils.DataContainer" title="handwriting.utils.training_utils.DataContainer">DataContainer</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.logsumexp">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">logsumexp</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#logsumexp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.logsumexp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logsumexp trick to avoid overflow in a log of sum of exponential expression</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>Variable</em><em> or </em><em>Tensor</em>) – the input on which to compute the log of sum of exponential</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the computed log of sum of exponential</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">logsum (Variable or Tensor)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.process_text_data">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">process_text_data</code><span class="sig-paren">(</span><em>settings</em>, <em>texts</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#process_text_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.process_text_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process text data for conditional generation</p>
+<p>Strategy : replace all non literal characters by a dummy <cite>#</cite> token.
+One hot encode the str text on a character basis for conditional generation
+Keep a dictionary to convert onehot to str and vice versa</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class to hold hyperparams</li>
+<li><strong>texts</strong> (<em>list</em>) – the sequences in str format</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">custom class to hold hyperparams
+texts (list): the sequences in str format
+texts_one_hot (list): the sequences, onehot encoded</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">settings (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings">ExperimentSettings</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.training_utils.train_step">
+<code class="descclassname">handwriting.utils.training_utils.</code><code class="descname">train_step</code><span class="sig-paren">(</span><em>settings</em>, <em>rnn</em>, <em>X_var</em>, <em>Y_var</em>, <em>optimizer</em>, <em>onehot=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/training_utils.html#train_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.training_utils.train_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full training step (forward + backward pass + weight update)</p>
+<p>Strategy: Carry out forward pass
+Compute the gaussian NLL loss and the classification (bce) loss
+Normalize loss by batch size
+Store loss in a dict to monitor progress
+Backward pass
+Clip gradients by a pre-specified threshold and carry out
+Weight update</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class to hold hyperparams</li>
+<li><strong>rnn</strong> (<em>nn.Model</em>) – the model to train</li>
+<li><strong>Y_var</strong> (<em>X_var</em><em>,</em>) – the</li>
+<li><strong>optimizer</strong> (<em>torch.optimizer</em>) – the optimizer to train the rnn</li>
+<li><strong>onehot</strong> (<em>torch.Variable</em><em> or </em><em>None</em>) – the onehot encode text for conditional generation</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">python dictionary storing training metrics</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">d_loss (dict)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="inference_utils.html" class="btn btn-neutral float-right" title="Inference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="logging_utils.html" class="btn btn-neutral" title="Logging" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, TDB.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

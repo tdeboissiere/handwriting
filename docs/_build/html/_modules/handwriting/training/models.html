@@ -1,0 +1,527 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>handwriting.training.models &mdash; handwriting  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="handwriting  documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> handwriting
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/system.html">System configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/python.html">Python configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Walkthrough</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../walkthrough/index.html">Walkthrough</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../training/index.html">training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../utils/index.html">utils</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">handwriting</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>handwriting.training.models</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for handwriting.training.models</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
+
+<span class="c1"># Named tuple to hold Gaussian Mixture parameters</span>
+<span class="c1"># It is more concise and prevents bugs that may arise if parameters are somehow shuffled</span>
+<span class="n">MDNParams</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;MDNParams&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mu1&#39;</span><span class="p">,</span> <span class="s1">&#39;mu2&#39;</span><span class="p">,</span> <span class="s1">&#39;log_sigma1&#39;</span><span class="p">,</span> <span class="s1">&#39;log_sigma2&#39;</span><span class="p">,</span> <span class="s1">&#39;rho&#39;</span><span class="p">,</span> <span class="s1">&#39;pi_logit&#39;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="HandwritingRNN"><a class="viewcode-back" href="../../../training/models.html#handwriting.training.models.HandwritingRNN">[docs]</a><span class="k">class</span> <span class="nc">HandwritingRNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for unconditional Handwriting generation</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        input_dim (int): the last dimension of a (seq_len, batch_size, input_dim) input.</span>
+<span class="sd">        hidden_dim (int): the desired dimension of the hidden state.</span>
+<span class="sd">        output_dim (int): the last dimension of a (seq_len, batch_size, output_dim) output.</span>
+<span class="sd">        layer_type (str): type of recurrent layer.</span>
+<span class="sd">        num_layers (int): number of layers.</span>
+<span class="sd">        recurrent_dropout (float): dropout applied to recurrent layers.</span>
+<span class="sd">        n_gaussian (int): number of gaussian mixture components.</span>
+<span class="sd">        use_cuda (bool): move weights to the GPU.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        rnn (nn.Model): a custom pytorch RNN model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span>
+                 <span class="n">layer_type</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span>
+                 <span class="n">recurrent_dropout</span><span class="p">,</span> <span class="n">n_gaussian</span><span class="p">,</span>
+                 <span class="n">use_cuda</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HandwritingRNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">=</span> <span class="n">layer_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span> <span class="o">=</span> <span class="n">hidden_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">num_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recurrent_dropout</span> <span class="o">=</span> <span class="n">recurrent_dropout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_gaussian</span> <span class="o">=</span> <span class="n">n_gaussian</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span> <span class="o">=</span> <span class="n">use_cuda</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;gru&quot;</span><span class="p">:</span>
+            <span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">GRU</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;lstm&quot;</span><span class="p">:</span>
+            <span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span>
+
+        <span class="c1"># Layers / nn objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn_layer</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span>
+                             <span class="n">hidden_dim</span><span class="p">,</span>
+                             <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
+                             <span class="n">dropout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">recurrent_dropout</span><span class="p">,</span>
+                             <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mdn_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">onehot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">out</span><span class="p">,</span> <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn_layer</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>
+
+        <span class="c1"># out is (batch_size, seq_len, hidden_dim * num_directions)</span>
+        <span class="c1"># We now map out to the parameters of the Gaussian Mixture Model of https://arxiv.org/pdf/1308.0850.pdf</span>
+
+        <span class="c1"># Flatten rnn output</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># Obtain MDN parameters</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mdn_layer</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+        <span class="n">mu1</span><span class="p">,</span> <span class="n">mu2</span><span class="p">,</span> <span class="n">log_sigma1</span><span class="p">,</span> <span class="n">log_sigma2</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">pi_logit</span><span class="p">,</span> <span class="n">e_logit</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gaussian</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Store Gaussian Mixture params in a namedtuple</span>
+        <span class="n">mdnparams</span> <span class="o">=</span> <span class="n">MDNParams</span><span class="p">(</span><span class="n">mu1</span><span class="o">=</span><span class="n">mu1</span><span class="p">,</span>
+                              <span class="n">mu2</span><span class="o">=</span><span class="n">mu2</span><span class="p">,</span>
+                              <span class="n">log_sigma1</span><span class="o">=</span><span class="n">log_sigma1</span><span class="p">,</span>
+                              <span class="n">log_sigma2</span><span class="o">=</span><span class="n">log_sigma2</span><span class="p">,</span>
+                              <span class="n">rho</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span>
+                              <span class="n">pi_logit</span><span class="o">=</span><span class="n">pi_logit</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mdnparams</span><span class="p">,</span> <span class="n">e_logit</span><span class="p">,</span> <span class="n">hidden</span>
+
+    <span class="k">def</span> <span class="nf">initHidden</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;gru&quot;</span><span class="p">:</span>
+            <span class="n">hidden_state</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">hidden_state</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">hidden_state</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;lstm&quot;</span><span class="p">:</span>
+            <span class="n">hidden_state</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span>
+            <span class="n">cell_state</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">hidden_state</span><span class="o">.</span><span class="n">cuda</span><span class="p">(),</span> <span class="n">cell_state</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">hidden_state</span><span class="p">,</span> <span class="n">cell_state</span></div>
+
+
+<div class="viewcode-block" id="ConditionalHandwritingRNN"><a class="viewcode-back" href="../../../training/models.html#handwriting.training.models.ConditionalHandwritingRNN">[docs]</a><span class="k">class</span> <span class="nc">ConditionalHandwritingRNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for conditional Handwriting generation</span>
+<span class="sd">    This implementation differs from Graves&#39; paper in the following way :</span>
+<span class="sd">    - The first recurrent layer only sees the input stroke</span>
+<span class="sd">    - The attention window is built after the first RNN has seen all the stroke time steps</span>
+
+<span class="sd">    The reason for those changes is mostly speed.</span>
+<span class="sd">    Implementing the Graves model requires python loops which are slow</span>
+<span class="sd">    Implementing as explained above can be done with broadcasting and torch primitives</span>
+<span class="sd">    This yields x5 to x10 speedups</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        input_dim (int): the last dimension of a (seq_len, batch_size, input_dim) input</span>
+<span class="sd">        hidden_dim (int): the desired dimension of the hidden state</span>
+<span class="sd">        output_dim (int): the last dimension of a (seq_len, batch_size, output_dim) output</span>
+<span class="sd">        layer_type (str): type of recurrent layer</span>
+<span class="sd">        num_layers (int): number of layers</span>
+<span class="sd">        recurrent_dropout (float): dropout applied to recurrent layers</span>
+<span class="sd">        n_gaussian (int): number of gaussian mixture components</span>
+<span class="sd">        n_window (int): number of gaussian components for the attention window</span>
+<span class="sd">        onehot_dim (int): dimension of onehot encoding (=vocabulary size)</span>
+<span class="sd">        use_cuda (bool): move weights to the GPU</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        rnn (nn.Model): a custom pytorch RNN model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span>
+                 <span class="n">layer_type</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">recurrent_dropout</span><span class="p">,</span>
+                 <span class="n">n_gaussian</span><span class="p">,</span> <span class="n">n_window</span><span class="p">,</span> <span class="n">onehot_dim</span><span class="p">,</span>
+                 <span class="n">use_cuda</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ConditionalHandwritingRNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="n">input_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">=</span> <span class="n">layer_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="n">num_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span> <span class="o">=</span> <span class="n">hidden_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recurrent_dropout</span> <span class="o">=</span> <span class="n">recurrent_dropout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_gaussian</span> <span class="o">=</span> <span class="n">n_gaussian</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span> <span class="o">=</span> <span class="n">use_cuda</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_window</span> <span class="o">=</span> <span class="n">n_window</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">onehot_dim</span> <span class="o">=</span> <span class="n">onehot_dim</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;gru&quot;</span><span class="p">:</span>
+            <span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">GRU</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;lstm&quot;</span><span class="p">:</span>
+            <span class="n">rnn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span>
+
+        <span class="c1">#########################</span>
+        <span class="c1"># Layers definition</span>
+        <span class="c1">#########################</span>
+
+        <span class="n">rnn0_input_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span>
+        <span class="n">rnnx_input_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">onehot_dim</span>
+
+        <span class="c1"># 1) Use batch first because we use torch.bmm afterwards. Without batch first</span>
+        <span class="c1"># we would have to transpose the tensor which may lead to confusion</span>
+        <span class="c1"># 2) Explicitly split into num_layers layers so that we can use skip connections</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn_layer0</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">rnn0_input_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Below is equivalent to self.rnn_layer1 = ... , self.rnn_layer2 =...</span>
+        <span class="c1"># But nicer</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;rnn_layer</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">,</span> <span class="n">rnn</span><span class="p">(</span><span class="n">rnnx_input_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">window_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_window</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mdn_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gaussian</span><span class="p">)</span>
+
+        <span class="n">list_layers</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;rnn_layer</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">)]</span>
+        <span class="n">list_layers</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">window_layer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mdn_layer</span><span class="p">]</span>
+
+        <span class="c1">#########################</span>
+        <span class="c1"># Custom initialization</span>
+        <span class="c1">#########################</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">list_layers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">p_name</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">p_name</span><span class="p">:</span>
+                    <span class="c1"># Graves-like initialization</span>
+                    <span class="c1"># (w/o the truncation which does not have much influence on the results)</span>
+                    <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.075</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p_name</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_layer</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s2">&quot;bias&quot;</span> <span class="ow">in</span> <span class="n">p_name</span><span class="p">:</span>
+                <span class="c1"># Custom initi for bias so that the kappas do not grow too fast</span>
+                <span class="c1"># and prevent sequence alignment</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mean</span><span class="o">=-</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_input</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">onehot</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">running_kappa</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1"># Initialize U to compute the gaussian windows</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+            <span class="n">U</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">onehot</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">cuda</span><span class="p">(),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">U</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">onehot</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># prepare for broadcasting</span>
+
+        <span class="c1"># Pass input to first layer</span>
+        <span class="n">out0</span><span class="p">,</span> <span class="n">hidden</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn_layer0</span><span class="p">(</span><span class="n">x_input</span><span class="p">,</span> <span class="n">hidden</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c1"># Compute the gaussian window parameters</span>
+        <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">kappa</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_layer</span><span class="p">(</span><span class="n">out0</span><span class="p">))</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_window</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># In training mode compute running_kappa = cumulative sum of kappa</span>
+        <span class="k">if</span> <span class="n">training</span><span class="p">:</span>
+            <span class="n">running_kappa</span> <span class="o">=</span> <span class="n">kappa</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Otherwise, update the previous kappa</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">running_kappa</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">running_kappa</span> <span class="o">=</span> <span class="n">running_kappa</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">kappa</span>
+
+        <span class="c1"># Compute the window</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="p">(</span><span class="n">running_kappa</span> <span class="o">-</span> <span class="n">U</span><span class="p">)</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">onehot</span><span class="p">)</span>
+
+        <span class="c1"># Save the last window/phi/kappa for plotting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="o">=</span> <span class="n">window</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_kappa</span> <span class="o">=</span> <span class="n">running_kappa</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+
+        <span class="c1"># Next RNN layers</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out0</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">x_input</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">):</span>
+            <span class="n">out</span><span class="p">,</span> <span class="n">hidden</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn_layer1</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">hidden</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">x_input</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Flatten rnn output so that the same operation is applied to each time step</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mdn_layer</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+        <span class="n">pi_logit</span><span class="p">,</span> <span class="n">mu1</span><span class="p">,</span> <span class="n">mu2</span><span class="p">,</span> <span class="n">log_sigma1</span><span class="p">,</span> <span class="n">log_sigma2</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">e_logit</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gaussian</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Store Gaussian Mixture params in a namedtuple</span>
+        <span class="n">mdnparams</span> <span class="o">=</span> <span class="n">MDNParams</span><span class="p">(</span><span class="n">mu1</span><span class="o">=</span><span class="n">mu1</span><span class="p">,</span>
+                              <span class="n">mu2</span><span class="o">=</span><span class="n">mu2</span><span class="p">,</span>
+                              <span class="n">log_sigma1</span><span class="o">=</span><span class="n">log_sigma1</span><span class="p">,</span>
+                              <span class="n">log_sigma2</span><span class="o">=</span><span class="n">log_sigma2</span><span class="p">,</span>
+                              <span class="n">rho</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span>
+                              <span class="n">pi_logit</span><span class="o">=</span><span class="n">pi_logit</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mdnparams</span><span class="p">,</span> <span class="n">e_logit</span><span class="p">,</span> <span class="n">hidden</span>
+
+    <span class="k">def</span> <span class="nf">initHidden</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;gru&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">())</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">)]</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;lstm&quot;</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[[</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()),</span>
+                         <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">())]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[[</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)),</span>
+                         <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="DenseMDN"><a class="viewcode-back" href="../../../training/models.html#handwriting.training.models.DenseMDN">[docs]</a><span class="k">class</span> <span class="nc">DenseMDN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simple Dense Mixture Density Network class</span>
+<span class="sd">    Used in tests to debug MDN</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        input_dim (int): the last dimension of a (seq_len, batch_size, input_dim) input</span>
+<span class="sd">        hidden_dim (int): the desired dimension of the hidden state</span>
+<span class="sd">        n_gaussian (int): number of gaussian mixture components</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        rnn (nn.Model): a custom pytorch Dense model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">,</span> <span class="n">n_gaussian</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DenseMDN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span> <span class="o">=</span> <span class="n">hidden_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_gaussian</span> <span class="o">=</span> <span class="n">n_gaussian</span>
+
+        <span class="c1"># Layers / nn objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dense1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dense2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gaussian</span> <span class="o">*</span> <span class="mi">6</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dense1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dense2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">mu1</span><span class="p">,</span> <span class="n">mu2</span><span class="p">,</span> <span class="n">log_sigma1</span><span class="p">,</span> <span class="n">log_sigma2</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">pi_logit</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gaussian</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Store Gaussian Mixture params in a namedtuple</span>
+        <span class="n">mdnparams</span> <span class="o">=</span> <span class="n">MDNParams</span><span class="p">(</span><span class="n">mu1</span><span class="o">=</span><span class="n">mu1</span><span class="p">,</span>
+                              <span class="n">mu2</span><span class="o">=</span><span class="n">mu2</span><span class="p">,</span>
+                              <span class="n">log_sigma1</span><span class="o">=</span><span class="n">log_sigma1</span><span class="p">,</span>
+                              <span class="n">log_sigma2</span><span class="o">=</span><span class="n">log_sigma2</span><span class="p">,</span>
+                              <span class="n">rho</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span>
+                              <span class="n">pi_logit</span><span class="o">=</span><span class="n">pi_logit</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mdnparams</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, TDB.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

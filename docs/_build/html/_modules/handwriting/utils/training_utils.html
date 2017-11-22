@@ -1,0 +1,731 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>handwriting.utils.training_utils &mdash; handwriting  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="handwriting  documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> handwriting
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/system.html">System configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/python.html">Python configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Walkthrough</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../walkthrough/index.html">Walkthrough</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../training/index.html">training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../utils/index.html">utils</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">handwriting</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>handwriting.utils.training_utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for handwriting.utils.training_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">..training</span> <span class="k">import</span> <span class="n">models</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="k">import</span> <span class="n">Variable</span>
+
+<span class="c1"># Named tuple to hold the data</span>
+<span class="c1"># It allows easy access of the data members by name</span>
+<span class="n">DataContainer</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;DataContainer&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;strokes&quot;</span><span class="p">,</span> <span class="s2">&quot;texts&quot;</span><span class="p">,</span> <span class="s2">&quot;onehots&quot;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="process_text_data"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.process_text_data">[docs]</a><span class="k">def</span> <span class="nf">process_text_data</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">texts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Process text data for conditional generation</span>
+
+<span class="sd">    Strategy : replace all non literal characters by a dummy `#` token.</span>
+<span class="sd">    One hot encode the str text on a character basis for conditional generation</span>
+<span class="sd">    Keep a dictionary to convert onehot to str and vice versa</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">        texts (list): the sequences in str format</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        settings (ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">        texts (list): the sequences in str format</span>
+<span class="sd">        texts_one_hot (list): the sequences, onehot encoded</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Replace special characters with the # token to specify &lt;unknown&gt;</span>
+    <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&#39;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;4&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;5&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;6&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;7&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;8&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+              <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;9&quot;</span><span class="p">,</span> <span class="s2">&quot;#&quot;</span><span class="p">)</span>
+             <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">]</span>
+
+    <span class="c1"># Get list of unique characters</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">alphabet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">texts</span><span class="p">)))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">n_alphabet</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">alphabet</span><span class="p">)</span>
+
+    <span class="c1"># Dict mapping unique characters to an index and vice versa</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">d_char_to_idx</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">d_idx_to_char</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">char_idx</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">alphabet</span><span class="p">):</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">d_char_to_idx</span><span class="p">[</span><span class="n">char</span><span class="p">]</span> <span class="o">=</span> <span class="n">char_idx</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">d_idx_to_char</span><span class="p">[</span><span class="n">char_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">char</span>
+
+    <span class="c1"># One hot encode the sequences</span>
+    <span class="n">texts_one_hot</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">:</span>
+        <span class="c1"># Split line into its individual characters</span>
+        <span class="n">line_chars</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">one_hot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">line_chars</span><span class="p">),</span> <span class="n">settings</span><span class="o">.</span><span class="n">n_alphabet</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="c1"># Fill the one hot encoding</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">line_chars</span><span class="p">):</span>
+            <span class="n">one_hot</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">d_char_to_idx</span><span class="p">[</span><span class="n">char</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">texts_one_hot</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">one_hot</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">settings</span><span class="p">,</span> <span class="n">texts</span><span class="p">,</span> <span class="n">texts_one_hot</span></div>
+
+
+<div class="viewcode-block" id="load_data"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.load_data">[docs]</a><span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">data_path</span><span class="o">=</span><span class="s2">&quot;data/raw&quot;</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load data to train RNN for handwriting generation</span>
+<span class="sd">        Shuffle the data and split between training and validation</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">        data_path (str): path to data</span>
+<span class="sd">        validate (bool): whether we are in validation mode. This is used</span>
+<span class="sd">        to add the char to idx and idx to char mappings to settings.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        data_container (DataContainer): custom class holding the data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Load the array of strokes</span>
+    <span class="n">raw_strokes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/strokes.npy&#39;</span> <span class="o">%</span> <span class="n">data_path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin1&quot;</span><span class="p">)</span>
+    <span class="c1"># Load the list of sentences</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/sentences.txt&#39;</span> <span class="o">%</span> <span class="n">data_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">raw_texts</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+    <span class="c1"># We will compute the mean ratio len_stroke / len_onehot</span>
+    <span class="n">stroke_counter</span><span class="p">,</span> <span class="n">text_counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="c1"># We remove pairs of (stroke, text) where len(stroke) &lt; settings.bptt</span>
+    <span class="n">strokes</span><span class="p">,</span> <span class="n">texts</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">raw_strokes</span><span class="p">,</span> <span class="n">raw_texts</span><span class="p">):</span>
+        <span class="c1"># Put strokes in a list, throw out those with length smaller than bptt + 1</span>
+        <span class="c1"># recall bptt is the seq len through which we backpropagate</span>
+        <span class="c1"># + 1 comes from the tagret which is offset by +1</span>
+        <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">strokes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="c1"># Update our stroke and text counters</span>
+            <span class="n">stroke_counter</span> <span class="o">+=</span> <span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">text_counter</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="c1"># Compute the mean ratio len_stroke / len_onehot (used in conditional generation)</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">stroke_onehot_ratio</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">stroke_counter</span> <span class="o">/</span> <span class="n">text_counter</span><span class="p">)</span>
+
+    <span class="c1"># Further processing of the text data in conditional mode (character removing, onehot encoding)</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">train_conditional</span> <span class="ow">or</span> <span class="n">validate</span><span class="p">:</span>
+        <span class="n">settings</span><span class="p">,</span> <span class="n">texts</span><span class="p">,</span> <span class="n">onehots</span> <span class="o">=</span> <span class="n">process_text_data</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">texts</span><span class="p">)</span>
+
+    <span class="c1"># Shuffle for good measure</span>
+    <span class="n">rng_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">strokes</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">train_unconditional</span><span class="p">:</span>
+
+        <span class="c1"># No train/val split as the losses are not very indicative of quality</span>
+        <span class="c1"># and we prefer validating on qualitative visual inspection</span>
+        <span class="n">data_container</span> <span class="o">=</span> <span class="n">DataContainer</span><span class="p">(</span><span class="n">strokes</span><span class="o">=</span><span class="n">strokes</span><span class="p">,</span> <span class="n">texts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">onehots</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data_container</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">train_conditional</span><span class="p">:</span>
+        <span class="c1"># Also shuffle the text and one hot sequence</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">rng_state</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">rng_state</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">onehots</span><span class="p">)</span>
+
+        <span class="c1"># No train/val split as the losses are not very indicative of quality</span>
+        <span class="c1"># and we prefer validating on qualitative visual inspection</span>
+        <span class="n">data_container</span> <span class="o">=</span> <span class="n">DataContainer</span><span class="p">(</span><span class="n">strokes</span><span class="o">=</span><span class="n">strokes</span><span class="p">,</span> <span class="n">texts</span><span class="o">=</span><span class="n">texts</span><span class="p">,</span> <span class="n">onehots</span><span class="o">=</span><span class="n">onehots</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data_container</span></div>
+
+
+<div class="viewcode-block" id="get_model"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.get_model">[docs]</a><span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">onehot_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Utility for model loading</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">        input_dim (int): the last dimension of a (seq_len, batch_size, input_dim) input</span>
+<span class="sd">        output_dim (int): the last dimension of a (seq_len, batch_size, output_dim) output</span>
+<span class="sd">        onehot_dim (int): text one hot encoding dimension (=vocabulary size)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        rnn (nn.Model): a custom pytorch RNN model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">train_unconditional</span><span class="p">:</span>
+        <span class="n">rnn</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">HandwritingRNN</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span>
+                                    <span class="n">settings</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span>
+                                    <span class="n">output_dim</span><span class="p">,</span>
+                                    <span class="n">settings</span><span class="o">.</span><span class="n">layer_type</span><span class="p">,</span>
+                                    <span class="n">settings</span><span class="o">.</span><span class="n">num_layers</span><span class="p">,</span>
+                                    <span class="n">settings</span><span class="o">.</span><span class="n">recurrent_dropout</span><span class="p">,</span>
+                                    <span class="n">settings</span><span class="o">.</span><span class="n">n_gaussian</span><span class="p">,</span>
+                                    <span class="n">settings</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">settings</span><span class="o">.</span><span class="n">train_conditional</span><span class="p">:</span>
+
+        <span class="k">assert</span> <span class="n">onehot_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="n">rnn</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ConditionalHandwritingRNN</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span>
+                                               <span class="n">settings</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span>
+                                               <span class="n">output_dim</span><span class="p">,</span>
+                                               <span class="n">settings</span><span class="o">.</span><span class="n">layer_type</span><span class="p">,</span>
+                                               <span class="n">settings</span><span class="o">.</span><span class="n">num_layers</span><span class="p">,</span>
+                                               <span class="n">settings</span><span class="o">.</span><span class="n">recurrent_dropout</span><span class="p">,</span>
+                                               <span class="n">settings</span><span class="o">.</span><span class="n">n_gaussian</span><span class="p">,</span>
+                                               <span class="n">settings</span><span class="o">.</span><span class="n">n_window</span><span class="p">,</span>
+                                               <span class="n">onehot_dim</span><span class="p">,</span>
+                                               <span class="n">settings</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">rnn</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rnn</span></div>
+
+
+<div class="viewcode-block" id="get_optimizer"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.get_optimizer">[docs]</a><span class="k">def</span> <span class="nf">get_optimizer</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Utility for gradient descent optimizer loading</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">        model (nn.Model): the model to optimize</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        optimizer (torch.optimizer): a pytorch optimizer</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+                                     <span class="n">lr</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">settings</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">==</span> <span class="s2">&quot;rmsprop&quot;</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">RMSprop</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+                                        <span class="n">lr</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">optimizer</span></div>
+
+
+<div class="viewcode-block" id="get_random_unconditional_training_batch"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.get_random_unconditional_training_batch">[docs]</a><span class="k">def</span> <span class="nf">get_random_unconditional_training_batch</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Utility to load a random batch for unconditional training</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings(ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">        data (DataContainer): custom class holding the data</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        X_tensor, Y_tensor (torch.Tensor): input and target tensor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">strokes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">strokes</span>
+    <span class="n">stroke_dim</span> <span class="o">=</span> <span class="n">strokes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Initialize numpy arrays where we&#39;ll fill features and targets</span>
+    <span class="c1"># This time, we format data as batch first (cf. models.ConditionalHandwritingRNN)</span>
+    <span class="n">X_npy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span><span class="p">,</span> <span class="n">stroke_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">Y_npy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span><span class="p">,</span> <span class="n">stroke_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Sample strokes randomly</span>
+    <span class="n">idxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">strokes</span><span class="p">),</span> <span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idxs</span><span class="p">):</span>
+
+        <span class="c1"># Select the stroke</span>
+        <span class="n">stroke</span> <span class="o">=</span> <span class="n">strokes</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="c1"># `data augmentation` : select random substroke</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">stroke</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">X_npy</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">stroke</span><span class="p">[</span><span class="n">start</span><span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">Y_npy</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">stroke</span><span class="p">[</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">X_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X_npy</span><span class="p">)</span>
+    <span class="n">Y_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Y_npy</span><span class="p">)</span>
+
+    <span class="c1"># Move data to GPU if required and wrap to Autograd Variable</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+        <span class="n">X_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X_tensor</span><span class="o">.</span><span class="n">cuda</span><span class="p">())</span>
+        <span class="n">Y_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">Y_tensor</span><span class="o">.</span><span class="n">cuda</span><span class="p">())</span>
+    <span class="c1"># Wrap to Autograd Variable</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X_tensor</span><span class="p">)</span>
+        <span class="n">Y_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">Y_tensor</span><span class="p">)</span>
+
+    <span class="c1"># Check tensor dimensions</span>
+    <span class="k">assert</span> <span class="n">X_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span>
+    <span class="k">assert</span> <span class="n">Y_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span>
+
+    <span class="k">assert</span> <span class="n">X_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span>
+    <span class="k">assert</span> <span class="n">Y_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span>
+
+    <span class="k">assert</span> <span class="n">X_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+    <span class="k">assert</span> <span class="n">Y_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+
+    <span class="k">return</span> <span class="n">X_tensor</span><span class="p">,</span> <span class="n">Y_tensor</span></div>
+
+
+<div class="viewcode-block" id="get_random_conditional_training_batch"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.get_random_conditional_training_batch">[docs]</a><span class="k">def</span> <span class="nf">get_random_conditional_training_batch</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Utility to load a random batch for conditional training</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings(ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">        data (DataContainer): custom class holding the data</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        X_tensor, Y_tensor (torch.Tensor): feature and target tensor</span>
+<span class="sd">                           plus onehot tensor for conditional generation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">strokes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">strokes</span>
+    <span class="n">onehots</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">onehots</span>
+
+    <span class="c1"># Sanity check. Each sequence should have its corresponding one hot representation</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">strokes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">onehots</span><span class="p">)</span>
+
+    <span class="n">strokes_dim</span> <span class="o">=</span> <span class="n">strokes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">onehot_dim</span> <span class="o">=</span> <span class="n">onehots</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Having defined the stroke_onehot_ratio, we can compute the</span>
+    <span class="c1"># approximate length of the onehot sequence corresponding to</span>
+    <span class="c1"># settings.bptt steps in the stroke sequence</span>
+    <span class="c1"># We do this to facilitate the learning of the alignment between</span>
+    <span class="c1"># stroke and onehot.</span>
+    <span class="n">onehot_len</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span> <span class="o">//</span> <span class="n">settings</span><span class="o">.</span><span class="n">stroke_onehot_ratio</span>
+
+    <span class="c1"># Initialize numpy arrays where we&#39;ll fill features and targets</span>
+    <span class="c1"># We format data as batch first (cf. models.ConditionalHandwritingRNN for explanation)</span>
+    <span class="n">X_npy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span><span class="p">,</span> <span class="n">strokes_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">Y_npy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span><span class="p">,</span> <span class="n">strokes_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">onehot_npy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">onehot_len</span><span class="p">,</span> <span class="n">onehot_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Get the list of sequences corresponding to the batch</span>
+    <span class="n">idxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">strokes</span><span class="p">),</span> <span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idxs</span><span class="p">):</span>
+        <span class="n">stroke</span> <span class="o">=</span> <span class="n">strokes</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">onehot</span> <span class="o">=</span> <span class="n">onehots</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="c1"># We only use the start of the stroke</span>
+        <span class="c1"># Otherwise, the network would have to also learn where to</span>
+        <span class="c1"># start the alignment</span>
+        <span class="n">X_npy</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">stroke</span><span class="p">[:</span><span class="n">settings</span><span class="o">.</span><span class="n">bptt</span><span class="p">]</span>
+        <span class="n">Y_npy</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">stroke</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">onehot_npy</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="p">:</span><span class="n">onehot</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">onehot</span><span class="p">[:</span><span class="n">onehot_len</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">X_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X_npy</span><span class="p">)</span>
+    <span class="n">Y_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Y_npy</span><span class="p">)</span>
+    <span class="n">onehot_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">onehot_npy</span><span class="p">)</span>
+
+    <span class="c1"># Wrap to Autograd Variable and move data to GPU if required</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+        <span class="n">X_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X_tensor</span><span class="o">.</span><span class="n">cuda</span><span class="p">())</span>
+        <span class="n">Y_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">Y_tensor</span><span class="o">.</span><span class="n">cuda</span><span class="p">())</span>
+        <span class="n">onehot_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">onehot_tensor</span><span class="o">.</span><span class="n">cuda</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">X_tensor</span><span class="p">)</span>
+        <span class="n">Y_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">Y_tensor</span><span class="p">)</span>
+        <span class="n">onehot_tensor</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">onehot_tensor</span><span class="p">)</span>
+
+    <span class="c1"># Check tensor dimensions</span>
+    <span class="k">assert</span> <span class="n">X_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span>
+    <span class="k">assert</span> <span class="n">Y_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span>
+    <span class="k">assert</span> <span class="n">onehot_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">batch_size</span>
+
+    <span class="k">assert</span> <span class="n">X_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span>
+    <span class="k">assert</span> <span class="n">Y_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">bptt</span>
+
+    <span class="k">assert</span> <span class="n">X_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+    <span class="k">assert</span> <span class="n">Y_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+
+    <span class="k">return</span> <span class="n">X_tensor</span><span class="p">,</span> <span class="n">Y_tensor</span><span class="p">,</span> <span class="n">onehot_tensor</span></div>
+
+
+<div class="viewcode-block" id="train_step"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.train_step">[docs]</a><span class="k">def</span> <span class="nf">train_step</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rnn</span><span class="p">,</span> <span class="n">X_var</span><span class="p">,</span> <span class="n">Y_var</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">onehot</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Full training step (forward + backward pass + weight update)</span>
+
+<span class="sd">    Strategy: Carry out forward pass</span>
+<span class="sd">    Compute the gaussian NLL loss and the classification (bce) loss</span>
+<span class="sd">    Normalize loss by batch size</span>
+<span class="sd">    Store loss in a dict to monitor progress</span>
+<span class="sd">    Backward pass</span>
+<span class="sd">    Clip gradients by a pre-specified threshold and carry out</span>
+<span class="sd">    Weight update</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">        rnn (nn.Model): the model to train</span>
+<span class="sd">        X_var, Y_var (torch.Variable): the</span>
+<span class="sd">        optimizer (torch.optimizer): the optimizer to train the rnn</span>
+<span class="sd">        onehot (torch.Variable or None): the onehot encode text for conditional generation</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        d_loss (dict): python dictionary storing training metrics</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Set NN to train mode (deals with dropout and batchnorm)</span>
+    <span class="n">rnn</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+    <span class="c1"># Reset gradients</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+    <span class="c1"># Initialize hidden</span>
+    <span class="n">hidden</span> <span class="o">=</span> <span class="n">rnn</span><span class="o">.</span><span class="n">initHidden</span><span class="p">(</span><span class="n">X_var</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="c1"># Forward pass</span>
+    <span class="n">mdnparams</span><span class="p">,</span> <span class="n">e_logit</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">rnn</span><span class="p">(</span><span class="n">X_var</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">onehot</span><span class="o">=</span><span class="n">onehot</span><span class="p">)</span>
+
+    <span class="c1"># Flatten target</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">Y_var</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+    <span class="c1"># Extract eos, X1, X2</span>
+    <span class="n">eos</span><span class="p">,</span> <span class="n">X1</span><span class="p">,</span> <span class="n">X2</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Compute nll loss for next stroke 2D prediction</span>
+    <span class="n">nll</span> <span class="o">=</span> <span class="n">gaussian_2Dnll</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">X2</span><span class="p">,</span> <span class="n">mdnparams</span><span class="p">)</span>
+    <span class="c1"># Compute binary classification loss for end of sequence tag</span>
+    <span class="n">loss_bce</span> <span class="o">=</span> <span class="n">classification_loss</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">e_logit</span><span class="p">)</span>
+
+    <span class="c1"># Sum the losses</span>
+    <span class="n">total_loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">nll</span> <span class="o">+</span> <span class="n">loss_bce</span><span class="p">)</span>
+
+    <span class="n">d_loss</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;nll&quot;</span><span class="p">:</span> <span class="n">nll</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+              <span class="s2">&quot;bce&quot;</span><span class="p">:</span> <span class="n">loss_bce</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+              <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="n">total_loss</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[</span><span class="mi">0</span><span class="p">]}</span>
+
+    <span class="c1"># Backward pass</span>
+    <span class="n">total_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="c1"># Gradient clipping</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">clip_grad_norm</span><span class="p">(</span><span class="n">rnn</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">settings</span><span class="o">.</span><span class="n">gradient_clipping</span><span class="p">)</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">d_loss</span></div>
+
+
+<div class="viewcode-block" id="classification_loss"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.classification_loss">[docs]</a><span class="k">def</span> <span class="nf">classification_loss</span><span class="p">(</span><span class="n">e_truth</span><span class="p">,</span> <span class="n">e_logit</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute binary cross entropy with logits between target and output logits</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        e_truth (Variable): target eos</span>
+<span class="sd">        e_logit (Variable): predicted logits</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        classification_loss (Variable): the binary cross entropy loss</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">classification_loss</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BCEWithLogitsLoss</span><span class="p">(</span><span class="n">size_average</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">e_logit</span><span class="p">,</span> <span class="n">e_truth</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">classification_loss</span></div>
+
+
+<div class="viewcode-block" id="logsumexp"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.logsumexp">[docs]</a><span class="k">def</span> <span class="nf">logsumexp</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Logsumexp trick to avoid overflow in a log of sum of exponential expression</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (Variable or Tensor): the input on which to compute the log of sum of exponential</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        logsum (Variable or Tensor): the computed log of sum of exponential</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="n">x_max</span><span class="p">,</span> <span class="n">x_max_idx</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">logsum</span> <span class="o">=</span> <span class="n">x_max</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">x_max</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">logsum</span></div>
+
+
+<div class="viewcode-block" id="compute_Z"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.compute_Z">[docs]</a><span class="k">def</span> <span class="nf">compute_Z</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">X2</span><span class="p">,</span> <span class="n">mu1</span><span class="p">,</span> <span class="n">mu2</span><span class="p">,</span> <span class="n">log_sigma1</span><span class="p">,</span> <span class="n">log_sigma2</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the z quantity of Formula 25 from https://arxiv.org/pdf/1308.0850.pdf</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X1 (Variable or Tensor): specify where to evaluate 2D gaussian</span>
+<span class="sd">        X2 (Variable or Tensor): specify where to evaluate 2D gaussian</span>
+<span class="sd">        mu1 (Variable or Tensor): mean the first gaussian component</span>
+<span class="sd">        mu2 (Variable or Tensor): mean the second gaussian component</span>
+<span class="sd">        log_sigma1 (Variable or Tensor): log standard deviation of the first gaussian component</span>
+<span class="sd">        log_sigma2 (Variable or Tensor): log standard deviation of the second gaussian component</span>
+<span class="sd">        rho (Variable or Tensor): captures the correlation between the gaussian components</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Z (Variable or Tensor): the computed Z</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Formula 25 from https://arxiv.org/pdf/1308.0850.pdf</span>
+    <span class="n">term1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">X1</span> <span class="o">-</span> <span class="n">mu1</span><span class="p">)</span> <span class="o">/</span> <span class="n">log_sigma1</span><span class="o">.</span><span class="n">exp</span><span class="p">(),</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">term2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">X2</span> <span class="o">-</span> <span class="n">mu2</span><span class="p">)</span> <span class="o">/</span> <span class="n">log_sigma2</span><span class="o">.</span><span class="n">exp</span><span class="p">(),</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">term3</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">rho</span> <span class="o">*</span> <span class="p">(</span><span class="n">X1</span> <span class="o">-</span> <span class="n">mu1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">X2</span> <span class="o">-</span> <span class="n">mu2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">log_sigma1</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span> <span class="o">*</span> <span class="n">log_sigma2</span><span class="o">.</span><span class="n">exp</span><span class="p">())</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">term1</span> <span class="o">+</span> <span class="n">term2</span> <span class="o">+</span> <span class="n">term3</span>
+
+    <span class="k">return</span> <span class="n">Z</span></div>
+
+
+<div class="viewcode-block" id="gaussian_2Dnll"><a class="viewcode-back" href="../../../utils/training_utils.html#handwriting.utils.training_utils.gaussian_2Dnll">[docs]</a><span class="k">def</span> <span class="nf">gaussian_2Dnll</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">X2</span><span class="p">,</span> <span class="n">mdnparams</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute 2D gaussian negative log-likelihood</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X1 (Variable): the first component of the target stroke</span>
+<span class="sd">        X2 (Variable): the second component of the target stroke</span>
+<span class="sd">        mdnparams (namedtuple): holds the predicted Mixture Gaussian parameters</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        nll (Variable): the computed 2D gaussian negative log-likelihood</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Roll out MDN params</span>
+    <span class="n">mu1</span> <span class="o">=</span> <span class="n">mdnparams</span><span class="o">.</span><span class="n">mu1</span>
+    <span class="n">mu2</span> <span class="o">=</span> <span class="n">mdnparams</span><span class="o">.</span><span class="n">mu2</span>
+    <span class="n">log_sigma1</span> <span class="o">=</span> <span class="n">mdnparams</span><span class="o">.</span><span class="n">log_sigma1</span>
+    <span class="n">log_sigma2</span> <span class="o">=</span> <span class="n">mdnparams</span><span class="o">.</span><span class="n">log_sigma2</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">mdnparams</span><span class="o">.</span><span class="n">rho</span>
+    <span class="n">pi_logit</span> <span class="o">=</span> <span class="n">mdnparams</span><span class="o">.</span><span class="n">pi_logit</span>
+
+    <span class="c1"># Expand to the same size as the gaussian components</span>
+    <span class="n">X1</span> <span class="o">=</span> <span class="n">X1</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">mu1</span><span class="p">)</span>
+    <span class="n">X2</span> <span class="o">=</span> <span class="n">X2</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">mu1</span><span class="p">)</span>
+
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">compute_Z</span><span class="p">(</span><span class="n">X1</span><span class="p">,</span> <span class="n">X2</span><span class="p">,</span> <span class="n">mu1</span><span class="p">,</span> <span class="n">mu2</span><span class="p">,</span> <span class="n">log_sigma1</span><span class="p">,</span> <span class="n">log_sigma2</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+
+    <span class="c1"># Rewrite likelihood part of Eq. 26 as logsumexp for stability</span>
+    <span class="n">pi_term</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">pi_logit</span><span class="p">)</span>
+    <span class="n">Z_term</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">sigma_term</span> <span class="o">=</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">log_sigma1</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span> <span class="o">*</span> <span class="n">log_sigma2</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+
+    <span class="n">exp_term</span> <span class="o">=</span> <span class="n">pi_term</span> <span class="o">+</span> <span class="n">Z_term</span> <span class="o">+</span> <span class="n">sigma_term</span>
+    <span class="n">nll</span> <span class="o">=</span> <span class="o">-</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">exp_term</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">nll</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, TDB.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

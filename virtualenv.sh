@@ -1,0 +1,1 @@
+source $HOME/customconda/bin/activate handwriting

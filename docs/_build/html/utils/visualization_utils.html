@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Visualization &mdash; handwriting  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="handwriting  documentation" href="../index.html"/>
+        <link rel="up" title="utils" href="index.html"/>
+        <link rel="prev" title="Inference" href="inference_utils.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> handwriting
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/system.html">System configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/python.html">Python configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Walkthrough</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../walkthrough/index.html">Walkthrough</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../training/index.html">training</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">utils</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="experiment_settings.html">Experiment Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging_utils.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_utils.html">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inference_utils.html">Inference</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Visualization</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">handwriting</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">utils</a> &raquo;</li>
+        
+      <li>Visualization</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/utils/visualization_utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-handwriting.utils.visualization_utils">
+<span id="visualization"></span><h1>Visualization<a class="headerlink" href="#module-handwriting.utils.visualization_utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="handwriting.utils.visualization_utils.get_stroke_arrays">
+<code class="descclassname">handwriting.utils.visualization_utils.</code><code class="descname">get_stroke_arrays</code><span class="sig-paren">(</span><em>stroke</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/visualization_utils.html#get_stroke_arrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.visualization_utils.get_stroke_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility to split a (n, 3) stroke array</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stroke</strong> (<em>np.array</em>) – input stroke</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">stroke line x coordinates
+x (np.array): stroke line y coordinates
+cuts (np.array): indicates where the pen is lifted</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">x (np.array)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.visualization_utils.plot_conditional">
+<code class="descclassname">handwriting.utils.visualization_utils.</code><code class="descname">plot_conditional</code><span class="sig-paren">(</span><em>settings</em>, <em>plot_data</em>, <em>fig_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/visualization_utils.html#plot_conditional"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.visualization_utils.plot_conditional" title="Permalink to this definition">¶</a></dt>
+<dd><p>Grid plot showing phi, attention window, density and sampled stroke</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class holding parameters of interest</li>
+<li><strong>plot_data</strong> (<a class="reference internal" href="inference_utils.html#handwriting.utils.inference_utils.PlotData" title="handwriting.utils.inference_utils.PlotData"><em>PlotData</em></a>) – custom class holding plotting data</li>
+<li><strong>fig_name</strong> (<em>str</em>) – path where to save figure</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.visualization_utils.plot_stroke">
+<code class="descclassname">handwriting.utils.visualization_utils.</code><code class="descname">plot_stroke</code><span class="sig-paren">(</span><em>stroke</em>, <em>save_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/visualization_utils.html#plot_stroke"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.visualization_utils.plot_stroke" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility to plot a single stroke, optionally saving it</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>stroke</strong> (<em>np.array</em>) – input stroke</li>
+<li><strong>save_name</strong> (<em>str</em>) – save a figure with name = save_name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.visualization_utils.plot_stroke_from_batch">
+<code class="descclassname">handwriting.utils.visualization_utils.</code><code class="descname">plot_stroke_from_batch</code><span class="sig-paren">(</span><em>X_var</em>, <em>Y_var</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/visualization_utils.html#plot_stroke_from_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.visualization_utils.plot_stroke_from_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility to plot a stroke from a torch batch
+Useful for debugging training</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>X_var</strong> (<em>torch Variable</em>) – batch of strokes</li>
+<li><strong>Y_var</strong> (<em>torch Variable</em>) – batch of strokes incremented by 1 in stroke steps</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.visualization_utils.plot_stroke_on_axis">
+<code class="descclassname">handwriting.utils.visualization_utils.</code><code class="descname">plot_stroke_on_axis</code><span class="sig-paren">(</span><em>ax</em>, <em>stroke</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/visualization_utils.html#plot_stroke_on_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.visualization_utils.plot_stroke_on_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility to plot a stroke on a given axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ax</strong> (<em>matplotlib axis</em>) – a matplotlib axis</li>
+<li><strong>stroke</strong> (<em>np.array</em>) – input stroke</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="handwriting.utils.visualization_utils.plot_stroke_with_text">
+<code class="descclassname">handwriting.utils.visualization_utils.</code><code class="descname">plot_stroke_with_text</code><span class="sig-paren">(</span><em>settings</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/handwriting/utils/visualization_utils.html#plot_stroke_with_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#handwriting.utils.visualization_utils.plot_stroke_with_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility to plot a stroke with corresponding text</p>
+<p>We verify that we recover the text from the onehot encoding</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>settings</strong> (<a class="reference internal" href="experiment_settings.html#handwriting.utils.experiment_settings.ExperimentSettings" title="handwriting.utils.experiment_settings.ExperimentSettings"><em>ExperimentSettings</em></a>) – custom class holding parameters of interest</li>
+<li><strong>data</strong> (<em>list</em>) – list containing an aray of strokes, str texts and onehot encoding of the text.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="inference_utils.html" class="btn btn-neutral" title="Inference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, TDB.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

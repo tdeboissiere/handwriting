@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>handwriting.training.train &mdash; handwriting  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="handwriting  documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> handwriting
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/system.html">System configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/python.html">Python configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Walkthrough</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../walkthrough/index.html">Walkthrough</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../training/index.html">training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../utils/index.html">utils</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">handwriting</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>handwriting.training.train</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for handwriting.training.train</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">training_utils</span> <span class="k">as</span> <span class="n">tu</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">logging_utils</span> <span class="k">as</span> <span class="n">lu</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">inference_utils</span> <span class="k">as</span> <span class="n">iu</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">visualization_utils</span> <span class="k">as</span> <span class="n">vu</span>
+
+
+<div class="viewcode-block" id="train_unconditional"><a class="viewcode-back" href="../../../training/train.html#handwriting.training.train.train_unconditional">[docs]</a><span class="k">def</span> <span class="nf">train_unconditional</span><span class="p">(</span><span class="n">settings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Train RNN for unconditional handwriting generation</span>
+
+<span class="sd">    Train for specified number of epochs and batches</span>
+<span class="sd">    Display 2D NLL loss and BCE loss to monitor training</span>
+<span class="sd">    Save model every 5 epochs</span>
+<span class="sd">    Save a generated sample every epoch</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#######</span>
+    <span class="c1"># Data</span>
+    <span class="c1">#######</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+
+    <span class="c1">######################</span>
+    <span class="c1"># Model specification</span>
+    <span class="c1">######################</span>
+    <span class="n">input_dim</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">strokes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">output_dim</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">settings</span><span class="o">.</span><span class="n">n_gaussian</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">rnn</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">get_optimizer</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rnn</span><span class="p">)</span>
+
+    <span class="c1"># Use GPU if required</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+        <span class="n">rnn</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+
+    <span class="c1"># Keep track of losses for display</span>
+    <span class="n">loss_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">d_monitor</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="c1">##########</span>
+    <span class="c1"># Training</span>
+    <span class="c1">##########</span>
+    <span class="n">lu</span><span class="o">.</span><span class="n">print_green</span><span class="p">(</span><span class="s2">&quot;Starting training&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">nb_epoch</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Training&quot;</span><span class="p">):</span>
+
+        <span class="c1"># Track the training losses over an epoch</span>
+        <span class="n">d_epoch_monitor</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="c1"># Loop over batches</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="s2">&quot;Epoch: </span><span class="si">%s</span><span class="s2"> -- </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">loss_str</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">n_batch_per_epoch</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">):</span>
+
+            <span class="c1"># Sample a batch (X, Y)</span>
+            <span class="n">X_var</span><span class="p">,</span> <span class="n">Y_var</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">get_random_unconditional_training_batch</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+            <span class="c1"># Train step = forward + backward + weight update</span>
+            <span class="n">d_loss</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">train_step</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rnn</span><span class="p">,</span> <span class="n">X_var</span><span class="p">,</span> <span class="n">Y_var</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
+
+            <span class="c1"># Optional visualization for debugging</span>
+            <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+                <span class="n">vu</span><span class="o">.</span><span class="n">plot_stroke_from_batch</span><span class="p">(</span><span class="n">X_var</span><span class="p">,</span> <span class="n">Y_var</span><span class="p">)</span>
+
+            <span class="n">d_epoch_monitor</span><span class="p">[</span><span class="s2">&quot;bce&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d_loss</span><span class="p">[</span><span class="s2">&quot;bce&quot;</span><span class="p">])</span>
+            <span class="n">d_epoch_monitor</span><span class="p">[</span><span class="s2">&quot;nll&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d_loss</span><span class="p">[</span><span class="s2">&quot;nll&quot;</span><span class="p">])</span>
+            <span class="n">d_epoch_monitor</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d_loss</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Sample a sequence to follow progress and save the plot</span>
+        <span class="n">plot_data</span> <span class="o">=</span> <span class="n">iu</span><span class="o">.</span><span class="n">sample_unconditional_sequence</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rnn</span><span class="p">)</span>
+        <span class="n">vu</span><span class="o">.</span><span class="n">plot_stroke</span><span class="p">(</span><span class="n">plot_data</span><span class="o">.</span><span class="n">stroke</span><span class="p">,</span> <span class="s2">&quot;figures/unconditional_samples/epoch_</span><span class="si">%s</span><span class="s2">.png&quot;</span> <span class="o">%</span> <span class="n">epoch</span><span class="p">)</span>
+
+        <span class="c1"># Update d_monitor with the mean over an epoch</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d_epoch_monitor</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">d_monitor</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">d_epoch_monitor</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
+        <span class="c1"># Prepare loss_str to update progress bar</span>
+        <span class="n">loss_str</span> <span class="o">=</span> <span class="s2">&quot;Total : </span><span class="si">%.3g</span><span class="s2"> -- NLL : </span><span class="si">%.3g</span><span class="s2"> -- BCE: </span><span class="si">%.3g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">d_monitor</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                                                <span class="n">d_monitor</span><span class="p">[</span><span class="s2">&quot;nll&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                                                <span class="n">d_monitor</span><span class="p">[</span><span class="s2">&quot;bce&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># Save the model at regular intervals</span>
+        <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="c1"># Move model to cpu before training to allow inference on cpu</span>
+            <span class="n">rnn</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">rnn</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">unconditional_model_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+                <span class="n">rnn</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+
+    <span class="n">lu</span><span class="o">.</span><span class="n">print_green</span><span class="p">(</span><span class="s2">&quot;Finished training&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="train_conditional"><a class="viewcode-back" href="../../../training/train.html#handwriting.training.train.train_conditional">[docs]</a><span class="k">def</span> <span class="nf">train_conditional</span><span class="p">(</span><span class="n">settings</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Train RNN for conditional handwriting generation</span>
+
+<span class="sd">    Train for specified number of epochs and batches</span>
+<span class="sd">    Display 2D NLL loss and BCE loss to monitor training</span>
+<span class="sd">    Save model every epoch</span>
+<span class="sd">    Save a generated sample every epoch + other plots like attention</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        settings (ExperimentSettings): custom class to hold hyperparams</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#######</span>
+    <span class="c1"># Data</span>
+    <span class="c1">#######</span>
+    <span class="n">list_data_train</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+        <span class="n">vu</span><span class="o">.</span><span class="n">plot_stroke_with_text</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">list_data_train</span><span class="p">)</span>
+
+    <span class="c1">######################</span>
+    <span class="c1"># Model specification</span>
+    <span class="c1">######################</span>
+    <span class="n">input_size</span> <span class="o">=</span> <span class="n">list_data_train</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">onehot_dim</span> <span class="o">=</span> <span class="n">list_data_train</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">output_size</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">settings</span><span class="o">.</span><span class="n">n_gaussian</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">rnn</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">input_size</span><span class="p">,</span> <span class="n">output_size</span><span class="p">,</span> <span class="n">onehot_dim</span><span class="o">=</span><span class="n">onehot_dim</span><span class="p">)</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">get_optimizer</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rnn</span><span class="p">)</span>
+
+    <span class="c1"># Use GPU if required</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+        <span class="n">rnn</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+
+    <span class="c1"># Keep track of losses for display</span>
+    <span class="n">loss_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">d_monitor</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="c1">##########</span>
+    <span class="c1"># Training</span>
+    <span class="c1">##########</span>
+    <span class="n">lu</span><span class="o">.</span><span class="n">print_green</span><span class="p">(</span><span class="s2">&quot;Starting training&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">nb_epoch</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Training&quot;</span><span class="p">):</span>
+
+        <span class="c1"># Track the training losses over an epoch</span>
+        <span class="n">d_epoch_monitor</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="c1"># Loop over batches</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="s2">&quot;Epoch: </span><span class="si">%s</span><span class="s2"> -- </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">loss_str</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">n_batch_per_epoch</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">):</span>
+
+            <span class="c1"># Sample a batch (X, Y)</span>
+            <span class="n">X_var</span><span class="p">,</span> <span class="n">Y_var</span><span class="p">,</span> <span class="n">onehot_var</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">get_random_conditional_training_batch</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">list_data_train</span><span class="p">)</span>
+
+            <span class="c1"># Train step.</span>
+            <span class="n">d_loss</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">train_step</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rnn</span><span class="p">,</span> <span class="n">X_var</span><span class="p">,</span> <span class="n">Y_var</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">onehot</span><span class="o">=</span><span class="n">onehot_var</span><span class="p">)</span>
+
+            <span class="n">d_epoch_monitor</span><span class="p">[</span><span class="s2">&quot;bce&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d_loss</span><span class="p">[</span><span class="s2">&quot;bce&quot;</span><span class="p">])</span>
+            <span class="n">d_epoch_monitor</span><span class="p">[</span><span class="s2">&quot;nll&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d_loss</span><span class="p">[</span><span class="s2">&quot;nll&quot;</span><span class="p">])</span>
+            <span class="n">d_epoch_monitor</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d_loss</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Update d_monitor with the mean over an epoch</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d_epoch_monitor</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">d_monitor</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">d_epoch_monitor</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
+        <span class="c1"># Prepare loss_str to update progress bar</span>
+        <span class="n">loss_str</span> <span class="o">=</span> <span class="s2">&quot;Total : </span><span class="si">%.3g</span><span class="s2"> -- NLL : </span><span class="si">%.3g</span><span class="s2"> -- BCE: </span><span class="si">%.3g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">d_monitor</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                                                <span class="n">d_monitor</span><span class="p">[</span><span class="s2">&quot;nll&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                                                <span class="n">d_monitor</span><span class="p">[</span><span class="s2">&quot;bce&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">plot_data</span> <span class="o">=</span> <span class="n">iu</span><span class="o">.</span><span class="n">sample_fixed_sequence</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rnn</span><span class="p">)</span>
+        <span class="n">vu</span><span class="o">.</span><span class="n">plot_conditional</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">plot_data</span><span class="p">,</span> <span class="s2">&quot;figures/conditional_samples/epoch_</span><span class="si">%s</span><span class="s2">.png&quot;</span> <span class="o">%</span> <span class="n">epoch</span><span class="p">)</span>
+
+        <span class="c1"># Move model to cpu before training to allow inference on cpu</span>
+        <span class="n">rnn</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">rnn</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">conditional_model_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">:</span>
+            <span class="n">rnn</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+
+    <span class="n">lu</span><span class="o">.</span><span class="n">print_green</span><span class="p">(</span><span class="s2">&quot;Finished training&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, TDB.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
