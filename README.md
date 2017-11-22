@@ -1,5 +1,7 @@
 # handwriting repository
 
+![figure](/docs/walkthrough/sample_figure.png)
+
 ## Repository overview
 
     ├── data
@@ -20,6 +22,10 @@
 Replace firefox with your web browser if needed.
 The docs contain detailed information about the code and the experiments.
 For a quicker overview, see below:
+
+Quick peek :
+
+![figure](/docs/installation/peek.png)
 
 ## Set up environment
 
